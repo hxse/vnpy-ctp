@@ -6,6 +6,8 @@
 
 基础版本的唯一声明在 meson.build；pyproject.toml 通过 meson-python 动态取得版本。CI 将完整 commit SHA 追加为 `.g<SHA>`，不使用本机时间、短 SHA 或运行次数。相同提交得到相同版本和 Release 标签；重跑不能覆盖已发布版本。
 
+源文件和发布元数据显式使用 UTF-8 读写，不依赖 Windows 默认代码页；工作流同时为工具子进程启用 Python UTF-8 模式。
+
 ## 矩阵与测试
 
 4 个系统/架构目标与 CPython 3.10～3.14 组成 20 个单元：Linux x86_64、Windows x64、macOS x86_64 和 macOS arm64。各自使用真实对应架构的运行器，Linux 在 manylinux_2_28 中编译。

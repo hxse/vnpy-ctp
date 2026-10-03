@@ -18,6 +18,8 @@ Linux 仅使用现有 x86_64 ELF 库；Windows 仅使用现有 x64 DLL/import li
 
 Windows 显式启用 Visual Studio 环境并选择 cl，不能误用运行器 PATH 中的 MinGW 链接 MSVC C++ 库。macOS 同时设置 build_rpath 与 install_rpath：meson-python 从构建目录装配 wheel，不能只依赖 meson install 才生效的路径配置。
 
+macOS 在 delocate 完成后，对 wheel 内每个 Mach-O 做本机 ad-hoc 签名并严格验证，再重建 wheel 的 RECORD。既有厂商签名或路径修复后的签名不能直接当作有效；不禁用系统签名检查，不修改仓库中的厂商原始文件。
+
 构建必须按真实目标架构选择原生库；不改标签冒充其他平台，不自动模拟。安装依赖为空，加载入口不能间接导入 vnpy 或 Qt。
 
 ## macOS 能力差异

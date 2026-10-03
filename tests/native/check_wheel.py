@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def run_child(arguments: list[str], *, timeout: int = 40) -> str:
-    result = subprocess.run(arguments, capture_output=True, text=True, timeout=timeout)
+    result = subprocess.run(arguments, capture_output=True, text=True, encoding="utf-8",
+                            errors="replace", timeout=timeout)
     if result.returncode:
         raise AssertionError(result.stdout + result.stderr)
     return result.stdout
@@ -27,7 +28,7 @@ def check_installed_package() -> None:
                    for path in files)
     assert not any(name == "vnpy" or name.startswith("vnpy.") for name in sys.modules)
     assert isinstance(TdApi().getApiVersion(), str)
-    limits = json.loads((ROOT / "native/capabilities.json").read_text())
+    limits = json.loads((ROOT / "native/capabilities.json").read_text(encoding="utf-8"))
     for name in limits["macos"]["unavailable_requests"]:
         python_name = name[0].lower() + name[1:]
         assert hasattr(TdApi, python_name) is (sys.platform != "darwin"), python_name

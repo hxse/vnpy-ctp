@@ -85,12 +85,12 @@ def generate(directory: Path, commit: str, repository: str) -> dict:
     if seen != expected:
         raise ValueError(f"发布矩阵不完整；缺少 {sorted(expected-seen)}，额外 {sorted(seen-expected)}")
     root = Path(__file__).resolve().parents[2]
-    capabilities = json.loads((root / "native/capabilities.json").read_text())
+    capabilities = json.loads((root / "native/capabilities.json").read_text(encoding="utf-8"))
     result = {"version": version, "commit": commit, "repository": repository,
               "upstream_version": "6.7.11.4", "native_capabilities": capabilities,
               "wheels": records}
-    (directory / "manifest.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
-    (directory / "SHA256SUMS").write_text("".join(f"{r['sha256']}  {r['filename']}\n" for r in records))
+    (directory / "manifest.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (directory / "SHA256SUMS").write_text("".join(f"{r['sha256']}  {r['filename']}\n" for r in records), encoding="utf-8")
     return result
 
 

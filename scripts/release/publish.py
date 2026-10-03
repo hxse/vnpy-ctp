@@ -90,7 +90,7 @@ def main() -> None:
     if args.check_existing:
         published = published_complete(Github(args.repository), args.commit, args.repository)
         if output := os.environ.get("GITHUB_OUTPUT"):
-            with Path(output).open("a") as stream:
+            with Path(output).open("a", encoding="utf-8") as stream:
                 stream.write(f"published={str(published).lower()}\n")
         print("already published" if published else "build required")
     else:

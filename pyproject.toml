@@ -60,3 +60,5 @@ repair-wheel-command = "delvewheel repair --add-path vendor/ctp/windows-x86_64 -
 [tool.cibuildwheel.macos]
 archs = ["auto"]
 environment = { MACOSX_DEPLOYMENT_TARGET = "11.0" }
+before-build = "python -m pip install wheel==0.45.1"
+repair-wheel-command = "python {project}/scripts/repair_macos.py {wheel} {dest_dir} {delocate_archs}"
