@@ -4,7 +4,7 @@ cpp = meson.get_compiler('cpp')
 pybind_include = run_command(py, '-c', 'import pybind11; print(pybind11.get_include())', check: true).stdout().strip()
 pybind_flag = cpp.get_id() in ['msvc', 'clang-cl'] ? '/I' : '-I'
 if cpp.get_id() in ['msvc', 'clang-cl']
-  add_project_arguments('/utf-8', language: 'cpp')
+  add_project_arguments('/utf-8', '/D_CRT_SECURE_NO_WARNINGS', language: 'cpp')
 endif
 py.extension_module('_native_probe', 'probe.cpp',
   include_directories: include_directories('../../../native'),

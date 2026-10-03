@@ -37,6 +37,7 @@ jobs:
         run: python -m scripts.release.publish .release "$GITHUB_SHA" "$GITHUB_REPOSITORY" --check-existing
 
   wheels:
+    name: ${{ matrix.target.id }} / ${{ matrix.python }}
     needs: prepare
     if: needs.prepare.outputs.published != 'true'
     strategy:

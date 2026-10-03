@@ -25,6 +25,9 @@ Repository = "https://github.com/hxse/vnpy-ctp"
 Releases = "https://github.com/hxse/vnpy-ctp/releases"
 Upstream = "https://github.com/vnpy/vnpy_ctp"
 
+[tool.meson-python.args]
+setup = ["--vsenv"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
 addopts = "-ra"
@@ -50,6 +53,7 @@ manylinux-x86_64-image = "manylinux_2_28"
 
 [tool.cibuildwheel.windows]
 archs = ["AMD64"]
+environment = { CC = "cl", CXX = "cl" }
 before-build = "python -m pip install delvewheel==1.13.1"
 repair-wheel-command = "delvewheel repair --add-path vendor/ctp/windows-x86_64 -w {dest_dir} {wheel}"
 

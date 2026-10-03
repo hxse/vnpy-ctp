@@ -16,6 +16,8 @@ macOS 使用同一 GB18030 路径，退出 iconv 全局状态。Windows 用 SDKD
 
 Linux 仅使用现有 x86_64 ELF 库；Windows 仅使用现有 x64 DLL/import library；macOS 使用自带 x86_64/arm64 的 Framework。Linux wheel 由 manylinux_2_28 构建并修复依赖。Windows 用 delvewheel，macOS 用 delocate，产物安装测试在修复后执行。
 
+Windows 显式启用 Visual Studio 环境并选择 cl，不能误用运行器 PATH 中的 MinGW 链接 MSVC C++ 库。macOS 同时设置 build_rpath 与 install_rpath：meson-python 从构建目录装配 wheel，不能只依赖 meson install 才生效的路径配置。
+
 构建必须按真实目标架构选择原生库；不改标签冒充其他平台，不自动模拟。安装依赖为空，加载入口不能间接导入 vnpy 或 Qt。
 
 ## macOS 能力差异

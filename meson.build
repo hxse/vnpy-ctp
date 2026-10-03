@@ -28,8 +28,11 @@ elif system == 'windows'
   if architecture != 'x86_64'
     error('The pinned Windows CTP library supports x86_64 only')
   endif
+  if cpp.get_id() not in ['msvc', 'clang-cl']
+    error('The vendor CTP C++ ABI requires an MSVC-compatible compiler')
+  endif
   ctp_dir = root / 'vendor/ctp/windows-x86_64'
-  add_project_arguments('/utf-8', language: 'cpp')
+  add_project_arguments('/utf-8', '/D_CRT_SECURE_NO_WARNINGS', language: 'cpp')
   ctp = cpp.find_library('thosttraderapi_se', dirs: [ctp_dir], required: true)
   install_data(ctp_dir / 'thosttraderapi_se.dll', install_dir: py.get_install_dir() / 'vnpy_ctp/api')
 elif system == 'darwin'
@@ -52,6 +55,8 @@ py.extension_module(
   cpp_args: [pybind_flag + pybind_include],
   dependencies: [py.dependency(), ctp, dependency('threads')],
   install: true,
+  # meson-python 从构建目录装配 wheel，macOS 的构建产物也必须携带加载路径。
+  build_rpath: system == 'darwin' ? rpath : '',
   install_rpath: rpath,
   subdir: 'vnpy_ctp/api',
 )
