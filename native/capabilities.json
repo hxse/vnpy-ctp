@@ -1,0 +1,63 @@
+{
+  "macos": {
+    "unavailable_requests": [
+      "RegisterWechatUserSystemInfo",
+      "ReqCancelOffsetSetting",
+      "ReqOffsetSetting",
+      "ReqQryCombLeg",
+      "ReqQryInvestorInfoCommRec",
+      "ReqQryOffsetSetting",
+      "ReqQryUserSession",
+      "SubmitWechatUserSystemInfo"
+    ],
+    "excluded_binding_methods": [
+      "OnErrRtnCancelOffsetSetting",
+      "OnErrRtnOffsetSetting",
+      "OnRspCancelOffsetSetting",
+      "OnRspOffsetSetting",
+      "OnRspQryCombLeg",
+      "OnRspQryInvestorInfoCommRec",
+      "OnRspQryOffsetSetting",
+      "OnRtnOffsetSetting",
+      "onErrRtnCancelOffsetSetting",
+      "onErrRtnOffsetSetting",
+      "onRspCancelOffsetSetting",
+      "onRspOffsetSetting",
+      "onRspQryCombLeg",
+      "onRspQryInvestorInfoCommRec",
+      "onRspQryOffsetSetting",
+      "onRtnOffsetSetting",
+      "processErrRtnCancelOffsetSetting",
+      "processErrRtnOffsetSetting",
+      "processRspCancelOffsetSetting",
+      "processRspOffsetSetting",
+      "processRspQryCombLeg",
+      "processRspQryInvestorInfoCommRec",
+      "processRspQryOffsetSetting",
+      "processRtnOffsetSetting",
+      "registerWechatUserSystemInfo",
+      "reqCancelOffsetSetting",
+      "reqOffsetSetting",
+      "reqQryCombLeg",
+      "reqQryInvestorInfoCommRec",
+      "reqQryOffsetSetting",
+      "reqQryUserSession",
+      "submitWechatUserSystemInfo"
+    ],
+    "unavailable_response_fields": {
+      "CThostFtdcRspUserLoginField": [
+        "LoginDRIdentityID",
+        "UserDRIdentityID",
+        "LastLoginTime",
+        "ReserveInfo"
+      ],
+      "CThostFtdcInvestorPositionField": [
+        "OptionValue"
+      ],
+      "CThostFtdcTradingAccountField": [
+        "OptionValue"
+      ]
+    },
+    "production_mode_switch": false
+  }
+}

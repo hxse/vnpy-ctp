@@ -1,0 +1,101 @@
+name: Build and release wheels
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wheels-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      published: ${{ steps.existing.outputs.published }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -r requirements-ci.txt
+      - run: python scripts/check_source.py
+      - run: python -m ruff check scripts tests src
+      - run: python -m pytest tests/unit -q
+      - id: version
+        run: python -m scripts.release.version "$GITHUB_SHA"
+      - id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -m scripts.release.publish .release "$GITHUB_SHA" "$GITHUB_REPOSITORY" --check-existing
+
+  wheels:
+    needs: prepare
+    if: needs.prepare.outputs.published != 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - {runner: ubuntu-24.04, platform: linux, arch: x86_64, id: linux-x86_64}
+          - {runner: windows-2022, platform: windows, arch: AMD64, id: windows-x86_64}
+          - {runner: macos-15-intel, platform: macos, arch: x86_64, id: macos-x86_64}
+          - {runner: macos-15, platform: macos, arch: arm64, id: macos-arm64}
+        python: [cp310, cp311, cp312, cp313, cp314]
+    runs-on: ${{ matrix.target.runner }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -r requirements-ci.txt
+      - name: Stamp commit version
+        shell: bash
+        run: python -m scripts.release.version "$GITHUB_SHA" --stamp
+      - name: Build, repair and test installed wheel
+        env:
+          CIBW_PLATFORM: ${{ matrix.target.platform }}
+          CIBW_ARCHS: ${{ matrix.target.arch }}
+          CIBW_BUILD: ${{ matrix.python }}-*
+        run: python -m cibuildwheel --output-dir .wheelhouse
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: wheel-${{ matrix.target.id }}-${{ matrix.python }}
+          path: .wheelhouse/*.whl
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+  release:
+    needs: [prepare, wheels]
+    if: needs.prepare.outputs.published != 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: wheel-*
+          merge-multiple: true
+          path: .release
+      - run: python -m pip install packaging==25.0
+      - name: Verify full matrix and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -m scripts.release.publish .release "$GITHUB_SHA" "$GITHUB_REPOSITORY"

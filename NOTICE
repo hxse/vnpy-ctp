@@ -1,0 +1,11 @@
+本仓库是从 ccxt-proxy2 迁出的定制 CTP 交易绑定，不是 VeighNa 官方完整网关。
+
+VeighNa Python/C++ 绑定来自 vnpy/vnpy_ctp 6.7.11.4，保留原 MIT LICENSE。
+迁移基线是 ccxt-proxy2 的 6.7.11.4+ccxtproxy.2 补丁源码包。
+来源地址、源码校验值及迁移文件校验值见 vendor/。
+
+vendor/ctp/ 中的原生交易库和 native/include/ 中的 CTP 头文件由上期技术提供，
+从上游发行包原样保留。MIT 声明不将第三方原生库的权利转授为本项目所有。
+
+本仓库保留退出时释放 GIL、回调内存所有权与队列终止修复；
+跨平台包装修订统一使用 Python GB18030 解码，并独立处理各系统的动态库链接。

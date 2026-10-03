@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# 固定的上游交易库属于构建输入；生成产物不入库。
+!vendor/ctp/linux-x86_64/*.so
+.wheelhouse/
+.sdist/
+.release/
+.native-tests/

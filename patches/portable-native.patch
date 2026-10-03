@@ -1,0 +1,878 @@
+--- a/native/vnctp.h
++++ b/native/vnctp.h
+@@ -1,3 +1,5 @@
++#include "pybind11/pybind11.h"
++#include <stdexcept>
+ #include <atomic>
+ #include <memory>
+ #include <string>
+@@ -9,11 +11,7 @@
+ #include <condition_variable>
+ #include <locale>
+ 
+-#ifdef __APPLE__
+-#include <iconv.h>
+-#endif
+ 
+-#include "pybind11/pybind11.h"
+ 
+ 
+ using namespace std;
+@@ -133,7 +131,6 @@
+ 
+ 
+ //将GBK编码的字符串转换为UTF8
+-#ifndef __APPLE__
+ inline string toUtf(const string &gb2312)
+ {
+     // Callers hold the GIL. Decode without requiring an OS GB18030 locale.
+@@ -144,39 +141,3 @@
+         throw error_already_set();
+     return reinterpret_steal<str>(decoded).cast<string>();
+ }
+-#else
+-iconv_t cd = iconv_open("UTF-8", "GB2312");
+-
+-int code_convert(char *inbuf, size_t inlen, char *outbuf, size_t outlen) 
+-{
+-    char **pin = &inbuf;
+-    char **pout = &outbuf;
+-
+-    memset(outbuf, 0, outlen);
+-
+-    if ((int)iconv(cd, pin, &inlen, pout, &outlen) == -1)
+-    {
+-        return -1;
+-    }
+-    *pout = "\0";
+-
+-    return 0;
+-}
+-
+-inline string toUtf(const string &gb2312)
+-{
+-    int length = gb2312.size() * 2 + 1;
+-    char temp[length];
+-
+-    int n = code_convert((char*)gb2312.c_str(), gb2312.size(), temp, length);
+-
+-    if(n == 0)
+-    {
+-        return temp;
+-    }
+-    else
+-    {
+-        return "";
+-    }
+-}
+-#endif
+--- a/native/vnctptd.h
++++ b/native/vnctptd.h
+@@ -683,28 +683,44 @@
+ 	virtual void OnRspQryInvestorPortfSetting(CThostFtdcInvestorPortfSettingField* pInvestorPortfSetting, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
+ 
+ 	///投资者申报费阶梯收取记录查询响应
++#if !defined(__APPLE__)
+ 	virtual void OnRspQryInvestorInfoCommRec(CThostFtdcInvestorInfoCommRecField* pInvestorInfoCommRec, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
++#endif
+ 
+ 	///组合腿信息查询响应
++#if !defined(__APPLE__)
+ 	virtual void OnRspQryCombLeg(CThostFtdcCombLegField* pCombLeg, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
++#endif
+ 
+ 	///对冲设置请求响应
++#if !defined(__APPLE__)
+ 	virtual void OnRspOffsetSetting(CThostFtdcInputOffsetSettingField* pInputOffsetSetting, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
++#endif
+ 
+ 	///对冲设置撤销请求响应
++#if !defined(__APPLE__)
+ 	virtual void OnRspCancelOffsetSetting(CThostFtdcInputOffsetSettingField* pInputOffsetSetting, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
++#endif
+ 
+ 	///对冲设置通知
++#if !defined(__APPLE__)
+ 	virtual void OnRtnOffsetSetting(CThostFtdcOffsetSettingField* pOffsetSetting);
++#endif
+ 
+ 	///对冲设置错误回报
++#if !defined(__APPLE__)
+ 	virtual void OnErrRtnOffsetSetting(CThostFtdcInputOffsetSettingField* pInputOffsetSetting, CThostFtdcRspInfoField* pRspInfo);
++#endif
+ 
+ 	///对冲设置撤销错误回报
++#if !defined(__APPLE__)
+ 	virtual void OnErrRtnCancelOffsetSetting(CThostFtdcCancelOffsetSettingField* pCancelOffsetSetting, CThostFtdcRspInfoField* pRspInfo);
++#endif
+ 
+ 	///投资者对冲设置查询响应
++#if !defined(__APPLE__)
+ 	virtual void OnRspQryOffsetSetting(CThostFtdcOffsetSettingField* pOffsetSetting, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
++#endif
+     //-------------------------------------------------------------------------------------
+     //task：任务
+     //-------------------------------------------------------------------------------------
+@@ -1022,21 +1038,37 @@
+ 
+ 	void processRspQryInvestorPortfSetting(Task *task);
+ 
++#if !defined(__APPLE__)
+ 	void processRspQryInvestorInfoCommRec(Task* task);
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void processRspQryCombLeg(Task* task);
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void processRspOffsetSetting(Task* task);
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void processRspCancelOffsetSetting(Task* task);
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void processRtnOffsetSetting(Task* task);
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void processErrRtnOffsetSetting(Task* task);
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void processErrRtnCancelOffsetSetting(Task* task);
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void processRspQryOffsetSetting(Task* task);
++#endif
+ 
+     //-------------------------------------------------------------------------------------
+     //data：回调函数的数据字典
+@@ -1358,21 +1390,37 @@
+ 
+ 	virtual void onRspQryInvestorPortfSetting(const dict &data, const dict &error, int reqid, bool last) {};
+ 
++#if !defined(__APPLE__)
+ 	virtual void onRspQryInvestorInfoCommRec(const dict& data, const dict& error, int reqid, bool last) {};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	virtual void onRspQryCombLeg(const dict& data, const dict& error, int reqid, bool last) {};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	virtual void onRspOffsetSetting(const dict& data, const dict& error, int reqid, bool last) {};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	virtual void onRspCancelOffsetSetting(const dict& data, const dict& error, int reqid, bool last) {};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	virtual void onRtnOffsetSetting(const dict& data) {};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	virtual void onErrRtnOffsetSetting(const dict& data, const dict& error) {};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	virtual void onErrRtnCancelOffsetSetting(const dict& data, const dict& error) {};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	virtual void onRspQryOffsetSetting(const dict& data, const dict& error, int reqid, bool last) {};
++#endif
+ 
+     //-------------------------------------------------------------------------------------
+     //req:主动函数的请求字典
+@@ -1408,9 +1456,13 @@
+ 
+ 	int submitUserSystemInfo(const dict& req);
+ 
++#if !defined(__APPLE__)
+ 	int registerWechatUserSystemInfo(const dict& req);
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	int submitWechatUserSystemInfo(const dict& req);
++#endif
+ 
+ 	int reqAuthenticate(const dict &req, int reqid);
+ 
+@@ -1484,7 +1536,9 @@
+ 
+ 	int reqQryInstrumentCommissionRate(const dict &req, int reqid);
+ 
++#if !defined(__APPLE__)
+ 	int reqQryUserSession(const dict& req, int reqid);
++#endif
+ 
+ 	int reqQryExchange(const dict &req, int reqid);
+ 
+@@ -1638,13 +1692,23 @@
+ 
+ 	int reqQryInvestorPortfSetting(const dict &req, int reqid);
+ 
++#if !defined(__APPLE__)
+ 	int reqQryInvestorInfoCommRec(const dict& req, int reqid);
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	int reqQryCombLeg(const dict& req, int reqid);
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	int reqOffsetSetting(const dict& req, int reqid);
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	int reqCancelOffsetSetting(const dict& req, int reqid);
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	int reqQryOffsetSetting(const dict& req, int reqid);
++#endif
+ };
+--- a/native/vnctptd.cpp
++++ b/native/vnctptd.cpp
+@@ -2998,6 +2998,7 @@
+ 	this->task_queue.push(task);
+ };
+ 
++#if !defined(__APPLE__)
+ void TdApi::OnRspQryInvestorInfoCommRec(CThostFtdcInvestorInfoCommRecField* pInvestorInfoCommRec, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast)
+ {
+ 	Task task = Task();
+@@ -3018,7 +3019,9 @@
+ 	task.task_last = bIsLast;
+ 	this->task_queue.push(task);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::OnRspQryCombLeg(CThostFtdcCombLegField* pCombLeg, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast)
+ {
+ 	Task task = Task();
+@@ -3039,7 +3042,9 @@
+ 	task.task_last = bIsLast;
+ 	this->task_queue.push(task);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::OnRspOffsetSetting(CThostFtdcInputOffsetSettingField* pInputOffsetSetting, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast)
+ {
+ 	Task task = Task();
+@@ -3060,7 +3065,9 @@
+ 	task.task_last = bIsLast;
+ 	this->task_queue.push(task);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::OnRspCancelOffsetSetting(CThostFtdcInputOffsetSettingField* pInputOffsetSetting, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast)
+ {
+ 	Task task = Task();
+@@ -3081,7 +3088,9 @@
+ 	task.task_last = bIsLast;
+ 	this->task_queue.push(task);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::OnRtnOffsetSetting(CThostFtdcOffsetSettingField* pOffsetSetting)
+ {
+ 	Task task = Task();
+@@ -3094,7 +3103,9 @@
+ 	}
+ 	this->task_queue.push(task);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::OnErrRtnOffsetSetting(CThostFtdcInputOffsetSettingField* pInputOffsetSetting, CThostFtdcRspInfoField* pRspInfo)
+ {
+ 	Task task = Task();
+@@ -3113,7 +3124,9 @@
+ 	}
+ 	this->task_queue.push(task);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::OnErrRtnCancelOffsetSetting(CThostFtdcCancelOffsetSettingField* pCancelOffsetSetting, CThostFtdcRspInfoField* pRspInfo)
+ {
+ 	Task task = Task();
+@@ -3132,7 +3145,9 @@
+ 	}
+ 	this->task_queue.push(task);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::OnRspQryOffsetSetting(CThostFtdcOffsetSettingField* pOffsetSetting, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast)
+ {
+ 	Task task = Task();
+@@ -3153,6 +3168,7 @@
+ 	task.task_last = bIsLast;
+ 	this->task_queue.push(task);
+ };
++#endif
+ 
+ ///-------------------------------------------------------------------------------------
+ ///工作线程从队列中取出数据，转化为python对象后，进行推送
+@@ -4104,53 +4120,69 @@
+ 				break;
+ 			}
+ 
++#if !defined(__APPLE__)
+ 			case ONRSPQRYINVESTORINFOCOMMREC:
+ 			{
+ 				this->processRspQryInvestorInfoCommRec(&task);
+ 				break;
+ 			}
+-
++#endif
++
++#if !defined(__APPLE__)
+ 			case ONRSPQRYCOMBLEG:
+ 			{
+ 				this->processRspQryCombLeg(&task);
+ 				break;
+ 			}
+-
++#endif
++
++#if !defined(__APPLE__)
+ 			case ONRSPOFFSETSETTING:
+ 			{
+ 				this->processRspOffsetSetting(&task);
+ 				break;
+ 			}
+-
++#endif
++
++#if !defined(__APPLE__)
+ 			case ONRSPCANCELOFFSETSETTING:
+ 			{
+ 				this->processRspCancelOffsetSetting(&task);
+ 				break;
+ 			}
+-
++#endif
++
++#if !defined(__APPLE__)
+ 			case ONRTNOFFSETSETTING:
+ 			{
+ 				this->processRtnOffsetSetting(&task);
+ 				break;
+ 			}
+-
++#endif
++
++#if !defined(__APPLE__)
+ 			case ONERRRTNOFFSETSETTING:
+ 			{
+ 				this->processErrRtnOffsetSetting(&task);
+ 				break;
+ 			}
+-
++#endif
++
++#if !defined(__APPLE__)
+ 			case ONERRRTNCANCELOFFSETSETTING:
+ 			{
+ 				this->processErrRtnCancelOffsetSetting(&task);
+ 				break;
+ 			}
+-
++#endif
++
++#if !defined(__APPLE__)
+ 			case ONRSPQRYOFFSETSETTING:
+ 			{
+ 				this->processRspQryOffsetSetting(&task);
+ 				break;
+ 			}
++#endif
+             };
+         }
+     }
+@@ -4222,10 +4254,18 @@
+ 		data["INETime"] = toUtf(task_data->INETime);
+ 		data["SysVersion"] = toUtf(task_data->SysVersion);
+ 		data["GFEXTime"] = toUtf(task_data->GFEXTime);
++#if !defined(__APPLE__)
+ 		data["LoginDRIdentityID"] = task_data->LoginDRIdentityID;
++#endif
++#if !defined(__APPLE__)
+ 		data["UserDRIdentityID"] = task_data->UserDRIdentityID;
++#endif
++#if !defined(__APPLE__)
+ 		data["LastLoginTime"] = toUtf(task_data->LastLoginTime);
++#endif
++#if !defined(__APPLE__)
+ 		data["ReserveInfo"] = toUtf(task_data->ReserveInfo);
++#endif
+ 	}
+ 	dict error;
+ 	if (task->task_error)
+@@ -5168,7 +5208,9 @@
+ 		data["TasPosition"] = task_data->TasPosition;
+ 		data["TasPositionCost"] = task_data->TasPositionCost;
+ 		data["InstrumentID"] = toUtf(task_data->InstrumentID);
++#if !defined(__APPLE__)
+ 		data["OptionValue"] = task_data->OptionValue;
++#endif
+ 	}
+ 	dict error;
+ 	if (task->task_error)
+@@ -5236,7 +5278,9 @@
+ 		data["BizType"] = task_data->BizType;
+ 		data["FrozenSwap"] = task_data->FrozenSwap;
+ 		data["RemainSwap"] = task_data->RemainSwap;
++#if !defined(__APPLE__)
+ 		data["OptionValue"] = task_data->OptionValue;
++#endif
+ 	}
+ 	dict error;
+ 	if (task->task_error)
+@@ -6201,7 +6245,9 @@
+ 		data["BizType"] = task_data->BizType;
+ 		data["FrozenSwap"] = task_data->FrozenSwap;
+ 		data["RemainSwap"] = task_data->RemainSwap;
++#if !defined(__APPLE__)
+ 		data["OptionValue"] = task_data->OptionValue;
++#endif
+ 	}
+ 	dict error;
+ 	if (task->task_error)
+@@ -10171,6 +10217,7 @@
+ 	this->onRspQryInvestorPortfSetting(data, error, task->task_id, task->task_last);
+ };
+ 
++#if !defined(__APPLE__)
+ void TdApi::processRspQryInvestorInfoCommRec(Task* task)
+ {
+ 	gil_scoped_acquire acquire;
+@@ -10199,7 +10246,9 @@
+ 	}
+ 	this->onRspQryInvestorInfoCommRec(data, error, task->task_id, task->task_last);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::processRspQryCombLeg(Task* task)
+ {
+ 	gil_scoped_acquire acquire;
+@@ -10223,7 +10272,9 @@
+ 	}
+ 	this->onRspQryCombLeg(data, error, task->task_id, task->task_last);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::processRspOffsetSetting(Task* task)
+ {
+ 	gil_scoped_acquire acquire;
+@@ -10254,7 +10305,9 @@
+ 	}
+ 	this->onRspOffsetSetting(data, error, task->task_id, task->task_last);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::processRspCancelOffsetSetting(Task* task)
+ {
+ 	gil_scoped_acquire acquire;
+@@ -10285,7 +10338,9 @@
+ 	}
+ 	this->onRspCancelOffsetSetting(data, error, task->task_id, task->task_last);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::processRtnOffsetSetting(Task* task)
+ {
+ 	gil_scoped_acquire acquire;
+@@ -10330,7 +10385,9 @@
+ 	}
+ 	this->onRtnOffsetSetting(data);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::processErrRtnOffsetSetting(Task* task)
+ {
+ 	gil_scoped_acquire acquire;
+@@ -10361,7 +10418,9 @@
+ 	}
+ 	this->onErrRtnOffsetSetting(data, error);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::processErrRtnCancelOffsetSetting(Task* task)
+ {
+ 	gil_scoped_acquire acquire;
+@@ -10404,7 +10463,9 @@
+ 	}
+ 	this->onErrRtnCancelOffsetSetting(data, error);
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ void TdApi::processRspQryOffsetSetting(Task* task)
+ {
+ 	gil_scoped_acquire acquire;
+@@ -10456,6 +10517,7 @@
+ 	}
+ 	this->onRspQryOffsetSetting(data, error, task->task_id, task->task_last);
+ };
++#endif
+ 
+ ///-------------------------------------------------------------------------------------
+ ///主动函数
+@@ -10463,7 +10525,13 @@
+ 
+ void TdApi::createFtdcTraderApi(string pszFlowPath, bool bIsProductionMode)
+ {
++#if defined(__APPLE__)
++    if (!bIsProductionMode)
++        throw std::invalid_argument("The macOS CTP SDK has no production-mode switch");
++    this->api = CThostFtdcTraderApi::CreateFtdcTraderApi(pszFlowPath.c_str());
++#else
+     this->api = CThostFtdcTraderApi::CreateFtdcTraderApi(pszFlowPath.c_str(), bIsProductionMode);
++#endif
+     this->api->RegisterSpi(this);
+ };
+ 
+@@ -10588,6 +10656,7 @@
+ 	return i;
+ };
+ 
++#if !defined(__APPLE__)
+ int TdApi::registerWechatUserSystemInfo(const dict& req)
+ {
+ 	CThostFtdcWechatUserSystemInfoField myreq = CThostFtdcWechatUserSystemInfoField();
+@@ -10604,7 +10673,9 @@
+ 	int i = this->api->RegisterWechatUserSystemInfo(&myreq);
+ 	return i;
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ int TdApi::submitWechatUserSystemInfo(const dict& req)
+ {
+ 	CThostFtdcWechatUserSystemInfoField myreq = CThostFtdcWechatUserSystemInfoField();
+@@ -10621,6 +10692,7 @@
+ 	int i = this->api->SubmitWechatUserSystemInfo(&myreq);
+ 	return i;
+ };
++#endif
+ 
+ int TdApi::reqAuthenticate(const dict &req, int reqid)
+ {
+@@ -10657,7 +10729,8 @@
+ 	#ifndef __APPLE__
+ 		int i = this->api->ReqUserLogin(&myreq, reqid);
+ 	#else
+-		int i = this->api->ReqUserLogin(&myreq, reqid, 2, "vn");
++		static char sdk_key[] = "vn";
++        int i = this->api->ReqUserLogin(&myreq, reqid, 2, sdk_key);
+ 	#endif
+ 
+ 	return i;
+@@ -11350,6 +11423,7 @@
+ 	return i;
+ };
+ 
++#if !defined(__APPLE__)
+ int TdApi::reqQryUserSession(const dict& req, int reqid)
+ {
+ 	CThostFtdcQryUserSessionField myreq = CThostFtdcQryUserSessionField();
+@@ -11361,6 +11435,7 @@
+ 	int i = this->api->ReqQryUserSession(&myreq, reqid);
+ 	return i;
+ };
++#endif
+ 
+ int TdApi::reqQryExchange(const dict &req, int reqid)
+ {
+@@ -12376,6 +12451,7 @@
+ 	return i;
+ };
+ 
++#if !defined(__APPLE__)
+ int TdApi::reqQryInvestorInfoCommRec(const dict& req, int reqid)
+ {
+ 	CThostFtdcQryInvestorInfoCommRecField myreq = CThostFtdcQryInvestorInfoCommRecField();
+@@ -12386,7 +12462,9 @@
+ 	int i = this->api->ReqQryInvestorInfoCommRec(&myreq, reqid);
+ 	return i;
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ int TdApi::reqQryCombLeg(const dict& req, int reqid)
+ {
+ 	CThostFtdcQryCombLegField myreq = CThostFtdcQryCombLegField();
+@@ -12395,7 +12473,9 @@
+ 	int i = this->api->ReqQryCombLeg(&myreq, reqid);
+ 	return i;
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ int TdApi::reqOffsetSetting(const dict& req, int reqid)
+ {
+ 	CThostFtdcInputOffsetSettingField myreq = CThostFtdcInputOffsetSettingField();
+@@ -12416,7 +12496,9 @@
+ 	int i = this->api->ReqOffsetSetting(&myreq, reqid);
+ 	return i;
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ int TdApi::reqCancelOffsetSetting(const dict& req, int reqid)
+ {
+ 	CThostFtdcInputOffsetSettingField myreq = CThostFtdcInputOffsetSettingField();
+@@ -12437,7 +12519,9 @@
+ 	int i = this->api->ReqCancelOffsetSetting(&myreq, reqid);
+ 	return i;
+ };
+-
++#endif
++
++#if !defined(__APPLE__)
+ int TdApi::reqQryOffsetSetting(const dict& req, int reqid)
+ {
+ 	CThostFtdcQryOffsetSettingField myreq = CThostFtdcQryOffsetSettingField();
+@@ -12449,6 +12533,7 @@
+ 	int i = this->api->ReqQryOffsetSetting(&myreq, reqid);
+ 	return i;
+ };
++#endif
+ 
+ ///-------------------------------------------------------------------------------------
+ ///pybind11封装
+@@ -14331,6 +14416,7 @@
+ 		}
+ 	};
+ 
++#if !defined(__APPLE__)
+ 	void onRspQryInvestorInfoCommRec(const dict& data, const dict& error, int reqid, bool last) override
+ 	{
+ 		try
+@@ -14342,7 +14428,9 @@
+ 			cout << e.what() << endl;
+ 		}
+ 	};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void onRspQryCombLeg(const dict& data, const dict& error, int reqid, bool last) override
+ 	{
+ 		try
+@@ -14354,7 +14442,9 @@
+ 			cout << e.what() << endl;
+ 		}
+ 	};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void onRspOffsetSetting(const dict& data, const dict& error, int reqid, bool last) override
+ 	{
+ 		try
+@@ -14366,7 +14456,9 @@
+ 			cout << e.what() << endl;
+ 		}
+ 	};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void onRspCancelOffsetSetting(const dict& data, const dict& error, int reqid, bool last) override
+ 	{
+ 		try
+@@ -14378,7 +14470,9 @@
+ 			cout << e.what() << endl;
+ 		}
+ 	};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void onRtnOffsetSetting(const dict& data) override
+ 	{
+ 		try
+@@ -14390,7 +14484,9 @@
+ 			cout << e.what() << endl;
+ 		}
+ 	};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void onErrRtnOffsetSetting(const dict& data, const dict& error) override
+ 	{
+ 		try
+@@ -14402,7 +14498,9 @@
+ 			cout << e.what() << endl;
+ 		}
+ 	};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void onErrRtnCancelOffsetSetting(const dict& data, const dict& error) override
+ 	{
+ 		try
+@@ -14414,7 +14512,9 @@
+ 			cout << e.what() << endl;
+ 		}
+ 	};
+-
++#endif
++
++#if !defined(__APPLE__)
+ 	void onRspQryOffsetSetting(const dict& data, const dict& error, int reqid, bool last) override
+ 	{
+ 		try
+@@ -14426,6 +14526,7 @@
+ 			cout << e.what() << endl;
+ 		}
+ 	};
++#endif
+ 
+ };
+ 
+@@ -14450,8 +14551,12 @@
+         .def("subscribePrivateTopic", &TdApi::subscribePrivateTopic)
+ 		.def("registerUserSystemInfo", &TdApi::registerUserSystemInfo)
+ 		.def("submitUserSystemInfo", &TdApi::submitUserSystemInfo)
++#if !defined(__APPLE__)
+ 		.def("registerWechatUserSystemInfo", &TdApi::registerWechatUserSystemInfo)
++#endif
++#if !defined(__APPLE__)
+ 		.def("submitWechatUserSystemInfo", &TdApi::submitWechatUserSystemInfo)
++#endif
+ 
+ 		.def("reqAuthenticate", &TdApi::reqAuthenticate)
+ 		.def("reqUserLogin", &TdApi::reqUserLogin)
+@@ -14489,7 +14594,9 @@
+ 		.def("reqQryTradingCode", &TdApi::reqQryTradingCode)
+ 		.def("reqQryInstrumentMarginRate", &TdApi::reqQryInstrumentMarginRate)
+ 		.def("reqQryInstrumentCommissionRate", &TdApi::reqQryInstrumentCommissionRate)
++#if !defined(__APPLE__)
+ 		.def("reqQryUserSession", &TdApi::reqQryUserSession)
++#endif
+ 		.def("reqQryExchange", &TdApi::reqQryExchange)
+ 		.def("reqQryProduct", &TdApi::reqQryProduct)
+ 		.def("reqQryInstrument", &TdApi::reqQryInstrument)
+@@ -14566,11 +14673,21 @@
+ 		.def("reqQryRULEInterParameter", &TdApi::reqQryRULEInterParameter)
+ 		.def("reqQryInvestorProdRULEMargin", &TdApi::reqQryInvestorProdRULEMargin)
+ 		.def("reqQryInvestorPortfSetting", &TdApi::reqQryInvestorPortfSetting)
++#if !defined(__APPLE__)
+ 		.def("reqQryInvestorInfoCommRec", &TdApi::reqQryInvestorInfoCommRec)
++#endif
++#if !defined(__APPLE__)
+ 		.def("reqQryCombLeg", &TdApi::reqQryCombLeg)
++#endif
++#if !defined(__APPLE__)
+ 		.def("reqOffsetSetting", &TdApi::reqOffsetSetting)
++#endif
++#if !defined(__APPLE__)
+ 		.def("reqCancelOffsetSetting", &TdApi::reqCancelOffsetSetting)
++#endif
++#if !defined(__APPLE__)
+ 		.def("reqQryOffsetSetting", &TdApi::reqQryOffsetSetting)
++#endif
+ 
+ 		.def("onFrontConnected", &TdApi::onFrontConnected)
+ 		.def("onFrontDisconnected", &TdApi::onFrontDisconnected)
+@@ -14728,13 +14845,29 @@
+ 		.def("onRspQryRULEInterParameter", &TdApi::onRspQryRULEInterParameter)
+ 		.def("onRspQryInvestorProdRULEMargin", &TdApi::onRspQryInvestorProdRULEMargin)
+ 		.def("onRspQryInvestorPortfSetting", &TdApi::onRspQryInvestorPortfSetting)
++#if !defined(__APPLE__)
+ 		.def("onRspQryInvestorInfoCommRec", &TdApi::onRspQryInvestorInfoCommRec)
++#endif
++#if !defined(__APPLE__)
+ 		.def("onRspQryCombLeg", &TdApi::onRspQryCombLeg)
++#endif
++#if !defined(__APPLE__)
+ 		.def("onRspOffsetSetting", &TdApi::onRspOffsetSetting)
++#endif
++#if !defined(__APPLE__)
+ 		.def("onRspCancelOffsetSetting", &TdApi::onRspCancelOffsetSetting)
++#endif
++#if !defined(__APPLE__)
+ 		.def("onRtnOffsetSetting", &TdApi::onRtnOffsetSetting)
++#endif
++#if !defined(__APPLE__)
+ 		.def("onErrRtnOffsetSetting", &TdApi::onErrRtnOffsetSetting)
++#endif
++#if !defined(__APPLE__)
+ 		.def("onErrRtnCancelOffsetSetting", &TdApi::onErrRtnCancelOffsetSetting)
++#endif
++#if !defined(__APPLE__)
+ 		.def("onRspQryOffsetSetting", &TdApi::onRspQryOffsetSetting)
++#endif
+ 		;
+ }
+--- a/native/stdafx.h
++++ b/native/stdafx.h
+@@ -5,7 +5,7 @@
+ 
+ #pragma once
+ 
+-#include "targetver.h"
++#include <SDKDDKVer.h>
+ 
+ #define WIN32_LEAN_AND_MEAN             // 从 Windows 头文件中排除极少使用的内容
+ // Windows 头文件

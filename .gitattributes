@@ -1,0 +1,7 @@
+* text=auto eol=lf
+# 上游 SDK 及其随包头文件保持原始字节，避免 Windows checkout 改写校验对象。
+vendor/ctp/** -text
+native/include/** -text
+*.so binary
+*.dll binary
+*.lib binary
