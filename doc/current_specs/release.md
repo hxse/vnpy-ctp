@@ -2,7 +2,7 @@
 
 ## 触发与版本
 
-`.github/workflows/wheels.yml` 响应所有分支的 push 和 workflow_dispatch。只处理本次 HEAD；标签推送不触发。每个 commit 使用独立并发组，同一提交重跑不并行覆盖；不同提交互不取消。
+`.github/workflows/wheels.yml` 仅响应 `workflow_dispatch`，由用户在 GitHub Actions 网页选择 `main` 后手动运行；普通 push、分支和标签事件不触发构建或发布。只处理选定的主线提交。每个 commit 使用独立并发组，同一提交重跑不并行覆盖；不同提交互不取消。
 
 基础版本的唯一声明在 meson.build；pyproject.toml 通过 meson-python 动态取得版本。CI 将完整 commit SHA 追加为 `.g<SHA>`，不使用本机时间、短 SHA 或运行次数。相同提交得到相同版本和 Release 标签；重跑不能覆盖已发布版本。
 
