@@ -10,7 +10,7 @@ _VERSION_LINE = r"^  version: '([^'\n]+)',$"
 _match = re.search(_VERSION_LINE, (ROOT / "meson.build").read_text(encoding="utf-8"), re.M)
 if _match is None:
     raise ValueError("meson.build 缺少唯一版本声明")
-BASE_VERSION = re.sub(r"\.g(?:[0-9a-f]{40}|[0-9a-f]{64})$", "", _match[1])
+BASE_VERSION = re.sub(r"\.g(?:[0-9a-f]{40}|[0-9a-f]{64})(?:\.assessment)?$", "", _match[1])
 
 
 def commit_version(commit: str) -> str:
@@ -19,8 +19,8 @@ def commit_version(commit: str) -> str:
     return f"{BASE_VERSION}.g{commit}"
 
 
-def stamp(root: Path, commit: str) -> str:
-    value = commit_version(commit)
+def stamp(root: Path, commit: str, *, assessment: bool = False) -> str:
+    value = commit_version(commit) + (".assessment" if assessment else "")
     replacements = (("meson.build", _VERSION_LINE, f"  version: '{value}',"),)
     for name, pattern, replacement in replacements:
         path = root / name
@@ -35,8 +35,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("commit")
     parser.add_argument("--stamp", action="store_true")
+    parser.add_argument("--assessment", action="store_true")
     args = parser.parse_args()
-    value = stamp(ROOT, args.commit) if args.stamp else commit_version(args.commit)
+    if args.assessment and not args.stamp:
+        parser.error("--assessment 只能用于 --stamp")
+    value = stamp(ROOT, args.commit, assessment=args.assessment) if args.stamp else commit_version(args.commit)
     print(value)
     if output := os.environ.get("GITHUB_OUTPUT"):
         with Path(output).open("a", encoding="utf-8") as stream:

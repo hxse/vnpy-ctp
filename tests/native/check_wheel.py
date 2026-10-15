@@ -27,20 +27,15 @@ def check_installed_package() -> None:
     assert not any("vnctpmd" in path or "thostmduserapi" in path or "/gateway/" in path
                    for path in files)
     assert not any(name == "vnpy" or name.startswith("vnpy.") for name in sys.modules)
-    assert isinstance(TdApi().getApiVersion(), str)
+    sdk = json.loads((ROOT / "vendor/sdk.json").read_text(encoding="utf-8"))
+    platform = {"linux": "linux_x86_64", "win32": "windows_x86_64",
+                "darwin": "macos_universal"}[sys.platform]
+    assert TdApi.getApiVersion() == sdk["builds"][platform]["api_version"]
     limits = json.loads((ROOT / "native/capabilities.json").read_text(encoding="utf-8"))
     for name in limits["macos"]["unavailable_requests"]:
         python_name = name[0].lower() + name[1:]
         assert hasattr(TdApi, python_name) is (sys.platform != "darwin"), python_name
-    if sys.platform == "darwin":
-        with tempfile.TemporaryDirectory() as path:
-            try:
-                TdApi().createFtdcTraderApi(path + "/", False)
-            except ValueError as error:
-                assert "production-mode" in str(error)
-            else:
-                raise AssertionError("macOS 必须拒绝不支持的模式开关")
-    print("native API", TdApi().getApiVersion(), "wheel", distribution.version, flush=True)
+    print("native API", TdApi.getApiVersion(), "wheel", distribution.version, flush=True)
 
 
 def check_no_front() -> None:
@@ -57,6 +52,16 @@ with tempfile.TemporaryDirectory() as path:
         assert api.reqQryOrder({}, 1) == -1
         assert api.reqQryTradingAccount({}, 2) == -1
         api.exit()
+        api.exit()
+    for production in (True, False):
+        api = TdApi()
+        api.exit()
+        api.createFtdcTraderApi(path + '/', production)
+        api.release()
+        api.release()
+        api = TdApi()
+        api.createFtdcTraderApi(path + '/', production)
+        del api
 print('released')
 """
     assert "released" in run_child([sys.executable, "-c", code])
@@ -70,7 +75,7 @@ def check_common_header() -> None:
         if sys.platform == "win32":
             setup.append("--vsenv")
         run_child(setup, timeout=120)
-        run_child([sys.executable, "-m", "mesonbuild.mesonmain", "compile", "-C", str(build)],
+        run_child([sys.executable, "-m", "mesonbuild.mesonmain", "compile", "-C", str(build), "-j1"],
                   timeout=120)
         modules = [path for path in build.glob("_native_probe*")
                    if path.suffix in {".so", ".pyd"}]

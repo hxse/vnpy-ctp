@@ -1,0 +1,1 @@
+option('full_gateway', type: 'boolean', value: false, description: 'Build the isolated manual assessment gateway with market data')

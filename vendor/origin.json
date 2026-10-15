@@ -5,5 +5,22 @@
   "migrated_archive": {
     "name": "vnpy_ctp-6.7.11.4+ccxtproxy.2.tar.gz",
     "sha256": "385d1187e5c5c1d93ae799332d71f929e6bc399b4c4fb192a6ff3ace610b4588"
+  },
+  "sdk": {
+    "version": "6.7.13",
+    "source": {
+      "url": "https://files.pythonhosted.org/packages/b7/d7/ba4b0482f6182c5326089652773a4efaa41a09f5cdde4c815ac4f0871c42/ctpwrapper-6.7.13.tar.gz",
+      "sha256": "94be58b8360e26f6c3b57f5a991a6c5bdac0f7707234e41ceb69c42c006e778e"
+    },
+    "updated_platforms": [
+      "linux-x86_64",
+      "windows-x86_64",
+      "macos-x86_64",
+      "macos-arm64"
+    ],
+    "macos_source": {
+      "url": "https://files.pythonhosted.org/packages/b6/09/8c94d0f6d770a39734d0568ccfc743f3a36078526bc1487e1b9d44d65ab1/ctp_python-6.7.13-cp313-cp313-macosx_10_13_x86_64.whl",
+      "sha256": "c708240202d88b93b3b178734271ce1bb581be633896e0a6037e676727d15ce1"
+    }
   }
 }

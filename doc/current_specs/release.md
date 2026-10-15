@@ -22,7 +22,7 @@ prepare 先检查原生库来源、必须保留的补丁、单元测试和 lint�
 
 发布前检查文件名、内部 METADATA/WHEEL、Python ABI、平台、唯一交易扩展、原生库存在性和空依赖列表。要求恰好覆盖 20 个不同单元；拒绝重复、缺失、额外平台、版本错配和夹带行情/网关模块。
 
-正式附件为 20 个 wheel、SHA256SUMS、manifest.json。manifest 包含版本、commit、上游版本、平台能力差异和各 wheel 的 URL、大小、SHA256。
+正式附件为 20 个 wheel、SHA256SUMS、manifest.json。manifest 包含版本、commit、绑定上游版本、厂商 API 版本/各平台完整构建串与原库摘要、平台能力差异和各 wheel 的 URL、大小、SHA256。厂商元数据来自 vendor/sdk.json，不能只靠 wheel 发行版本推断 API。
 
 先创建草稿，上传所有附件并核对 GitHub 计算的 digest，再发布。上传失败不发布半套版本；同一提交草稿可重跑。已发布版本只核验复用，不删除、替换附件或移动标签。仓库可启用 immutable releases，将此约束同时交由 GitHub 执行。
 
@@ -32,6 +32,7 @@ Actions Artifact 仅在作业之间传递，保留七天。正式下载来自 Re
 
 开发入口为 just setup/test/check/build/test-native。普通 test 不编译 SDK或访问网络；test-native 必须显式传入已生成 wheel，安装时 --no-deps，随后执行离线原生验证。
 
-本项目的产物生产和 ccxt-proxy2 的消费切换分阶段进行：本次只交付新仓库与发布能力，原项目不修改。消费方以后锁定 Release URL、版本和 SHA256，检查接口兼容性，并显式禁用源码编译回退。
+消费方锁定 Release URL、版本和 SHA256，并核对实际厂商 API 版本。缺失 wheel 是否允许固定提交的源码构建由消费方决定；网络或摘要失败不能被解释成目标缺失。
+人工评测完整变体以同一固定提交从源码构建，版本增加 .assessment；它不进入默认发布矩阵，也不能通过精简生产 wheel 的校验。
 
 GitHub 的仓库或 Release 被删除、访问权限改变、服务不可达都可能使下载失败；长期链接不等于永久在线保证。已经校验过的本地安装缓存可由消费方正常复用。

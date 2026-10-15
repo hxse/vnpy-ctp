@@ -1,6 +1,6 @@
 project(
   'vnpy_ctp', 'cpp',
-  version: '6.7.11.4+ccxtproxy.3',
+  version: '6.7.13.0+ccxtproxy.4',
   license: 'MIT',
   meson_version: '>=1.7.0',
   default_options: ['buildtype=release', 'cpp_std=c++17', 'b_vscrt=mt'],
@@ -60,5 +60,36 @@ py.extension_module(
   install_rpath: rpath,
   subdir: 'vnpy_ctp/api',
 )
-py.install_sources('src/vnpy_ctp/__init__.py', subdir: 'vnpy_ctp')
-py.install_sources('src/vnpy_ctp/api/__init__.py', subdir: 'vnpy_ctp/api')
+if get_option('full_gateway')
+  # 只供独立人工评测环境；生产默认 wheel 仍不包含网关或行情模块。
+  if not meson.project_version().endswith('.assessment')
+    error('Full gateway builds require the separate .assessment version')
+  endif
+  if system == 'darwin'
+    md_dir = root / 'vendor/assessment/macos'
+    md = declare_dependency(link_args: ['-F' + md_dir, '-framework', 'thostmduserapi_se'])
+    install_subdir('vendor/assessment/macos/thostmduserapi_se.framework', install_dir: py.get_install_dir() / 'vnpy_ctp/api')
+  else
+    md_dir = root / 'vendor/assessment' / (system == 'linux' ? 'linux-x86_64' : 'windows-x86_64')
+    md = cpp.find_library('thostmduserapi_se', dirs: [md_dir], required: true)
+    md_library = system == 'linux' ? 'libthostmduserapi_se.so' : 'thostmduserapi_se.dll'
+    install_data(md_dir / md_library, install_dir: py.get_install_dir() / 'vnpy_ctp/api')
+  endif
+  py.extension_module(
+    'vnctpmd', 'native/assessment/vnctpmd.cpp',
+    include_directories: include_directories('native', 'native/assessment', headers),
+    cpp_args: [pybind_flag + pybind_include],
+    dependencies: [py.dependency(), md, dependency('threads')],
+    install: true, build_rpath: system == 'darwin' ? rpath : '', install_rpath: rpath,
+    subdir: 'vnpy_ctp/api',
+  )
+  py.install_sources('assessment/vnpy_ctp/__init__.py', subdir: 'vnpy_ctp')
+  py.install_sources('assessment/vnpy_ctp/api/__init__.py', 'assessment/vnpy_ctp/api/ctp_constant.py', subdir: 'vnpy_ctp/api')
+  py.install_sources('assessment/vnpy_ctp/gateway/__init__.py', 'assessment/vnpy_ctp/gateway/ctp_gateway.py', subdir: 'vnpy_ctp/gateway')
+else
+  if meson.project_version().endswith('.assessment')
+    error('Assessment versions must include the full gateway')
+  endif
+  py.install_sources('src/vnpy_ctp/__init__.py', subdir: 'vnpy_ctp')
+  py.install_sources('src/vnpy_ctp/api/__init__.py', subdir: 'vnpy_ctp/api')
+endif

@@ -1,4 +1,4 @@
-project('ctp-native-probe', 'cpp', default_options: ['cpp_std=c++17', 'b_vscrt=mt'])
+project('ctp-native-probe', 'cpp', meson_version: '>=1.7.0', default_options: ['cpp_std=c++17', 'b_vscrt=mt'])
 py = import('python').find_installation(get_option('python'))
 cpp = meson.get_compiler('cpp')
 pybind_include = run_command(py, '-c', 'import pybind11; print(pybind11.get_include())', check: true).stdout().strip()

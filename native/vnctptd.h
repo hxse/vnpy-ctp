@@ -184,9 +184,10 @@ using namespace pybind11;
 class TdApi : public CThostFtdcTraderSpi
 {
 private:
-	CThostFtdcTraderApi* api;            //API对象
+	CThostFtdcTraderApi* api = nullptr;            //API对象
     thread task_thread;                    //工作线程指针（向python中推送数据）
     TaskQueue task_queue;                //任务队列
+    std::mutex lifecycle_mutex;
     atomic<bool> active{false};                //工作状态
 
 public:
@@ -196,9 +197,15 @@ public:
 
     virtual ~TdApi()
     {
-        if (this->active)
+        if (this->api)
         {
-            this->exit();
+            // Python 析构也必须在等待原生线程前释放 GIL。
+            if (Py_IsInitialized() && PyGILState_Check()) {
+                gil_scoped_release release_gil;
+                this->exit();
+            } else {
+                this->exit();
+            }
         }
     };
 
@@ -683,44 +690,28 @@ public:
 	virtual void OnRspQryInvestorPortfSetting(CThostFtdcInvestorPortfSettingField* pInvestorPortfSetting, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
 
 	///投资者申报费阶梯收取记录查询响应
-#if !defined(__APPLE__)
 	virtual void OnRspQryInvestorInfoCommRec(CThostFtdcInvestorInfoCommRecField* pInvestorInfoCommRec, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
-#endif
 
 	///组合腿信息查询响应
-#if !defined(__APPLE__)
 	virtual void OnRspQryCombLeg(CThostFtdcCombLegField* pCombLeg, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
-#endif
 
 	///对冲设置请求响应
-#if !defined(__APPLE__)
 	virtual void OnRspOffsetSetting(CThostFtdcInputOffsetSettingField* pInputOffsetSetting, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
-#endif
 
 	///对冲设置撤销请求响应
-#if !defined(__APPLE__)
 	virtual void OnRspCancelOffsetSetting(CThostFtdcInputOffsetSettingField* pInputOffsetSetting, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
-#endif
 
 	///对冲设置通知
-#if !defined(__APPLE__)
 	virtual void OnRtnOffsetSetting(CThostFtdcOffsetSettingField* pOffsetSetting);
-#endif
 
 	///对冲设置错误回报
-#if !defined(__APPLE__)
 	virtual void OnErrRtnOffsetSetting(CThostFtdcInputOffsetSettingField* pInputOffsetSetting, CThostFtdcRspInfoField* pRspInfo);
-#endif
 
 	///对冲设置撤销错误回报
-#if !defined(__APPLE__)
 	virtual void OnErrRtnCancelOffsetSetting(CThostFtdcCancelOffsetSettingField* pCancelOffsetSetting, CThostFtdcRspInfoField* pRspInfo);
-#endif
 
 	///投资者对冲设置查询响应
-#if !defined(__APPLE__)
 	virtual void OnRspQryOffsetSetting(CThostFtdcOffsetSettingField* pOffsetSetting, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast);
-#endif
     //-------------------------------------------------------------------------------------
     //task：任务
     //-------------------------------------------------------------------------------------
@@ -1038,37 +1029,21 @@ public:
 
 	void processRspQryInvestorPortfSetting(Task *task);
 
-#if !defined(__APPLE__)
 	void processRspQryInvestorInfoCommRec(Task* task);
-#endif
 
-#if !defined(__APPLE__)
 	void processRspQryCombLeg(Task* task);
-#endif
 
-#if !defined(__APPLE__)
 	void processRspOffsetSetting(Task* task);
-#endif
 
-#if !defined(__APPLE__)
 	void processRspCancelOffsetSetting(Task* task);
-#endif
 
-#if !defined(__APPLE__)
 	void processRtnOffsetSetting(Task* task);
-#endif
 
-#if !defined(__APPLE__)
 	void processErrRtnOffsetSetting(Task* task);
-#endif
 
-#if !defined(__APPLE__)
 	void processErrRtnCancelOffsetSetting(Task* task);
-#endif
 
-#if !defined(__APPLE__)
 	void processRspQryOffsetSetting(Task* task);
-#endif
 
     //-------------------------------------------------------------------------------------
     //data：回调函数的数据字典
@@ -1390,37 +1365,21 @@ public:
 
 	virtual void onRspQryInvestorPortfSetting(const dict &data, const dict &error, int reqid, bool last) {};
 
-#if !defined(__APPLE__)
 	virtual void onRspQryInvestorInfoCommRec(const dict& data, const dict& error, int reqid, bool last) {};
-#endif
 
-#if !defined(__APPLE__)
 	virtual void onRspQryCombLeg(const dict& data, const dict& error, int reqid, bool last) {};
-#endif
 
-#if !defined(__APPLE__)
 	virtual void onRspOffsetSetting(const dict& data, const dict& error, int reqid, bool last) {};
-#endif
 
-#if !defined(__APPLE__)
 	virtual void onRspCancelOffsetSetting(const dict& data, const dict& error, int reqid, bool last) {};
-#endif
 
-#if !defined(__APPLE__)
 	virtual void onRtnOffsetSetting(const dict& data) {};
-#endif
 
-#if !defined(__APPLE__)
 	virtual void onErrRtnOffsetSetting(const dict& data, const dict& error) {};
-#endif
 
-#if !defined(__APPLE__)
 	virtual void onErrRtnCancelOffsetSetting(const dict& data, const dict& error) {};
-#endif
 
-#if !defined(__APPLE__)
 	virtual void onRspQryOffsetSetting(const dict& data, const dict& error, int reqid, bool last) {};
-#endif
 
     //-------------------------------------------------------------------------------------
     //req:主动函数的请求字典
@@ -1456,13 +1415,9 @@ public:
 
 	int submitUserSystemInfo(const dict& req);
 
-#if !defined(__APPLE__)
 	int registerWechatUserSystemInfo(const dict& req);
-#endif
 
-#if !defined(__APPLE__)
 	int submitWechatUserSystemInfo(const dict& req);
-#endif
 
 	int reqAuthenticate(const dict &req, int reqid);
 
@@ -1536,9 +1491,7 @@ public:
 
 	int reqQryInstrumentCommissionRate(const dict &req, int reqid);
 
-#if !defined(__APPLE__)
 	int reqQryUserSession(const dict& req, int reqid);
-#endif
 
 	int reqQryExchange(const dict &req, int reqid);
 
@@ -1692,23 +1645,13 @@ public:
 
 	int reqQryInvestorPortfSetting(const dict &req, int reqid);
 
-#if !defined(__APPLE__)
 	int reqQryInvestorInfoCommRec(const dict& req, int reqid);
-#endif
 
-#if !defined(__APPLE__)
 	int reqQryCombLeg(const dict& req, int reqid);
-#endif
 
-#if !defined(__APPLE__)
 	int reqOffsetSetting(const dict& req, int reqid);
-#endif
 
-#if !defined(__APPLE__)
 	int reqCancelOffsetSetting(const dict& req, int reqid);
-#endif
 
-#if !defined(__APPLE__)
 	int reqQryOffsetSetting(const dict& req, int reqid);
-#endif
 };

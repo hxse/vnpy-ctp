@@ -42,6 +42,12 @@ def test_version_is_unique_deterministic_and_stamps_meson_metadata(tmp_path):
     assert VERSION in (tmp_path / "meson.build").read_text()
 
 
+def test_assessment_version_is_separate_from_the_production_wheel(tmp_path):
+    (tmp_path / "meson.build").write_text(f"  version: '{BASE_VERSION}',\n")
+    assert stamp(tmp_path, COMMIT, assessment=True) == VERSION + ".assessment"
+    assert stamp(tmp_path, COMMIT) == VERSION
+
+
 def test_complete_matrix_produces_fixed_urls_and_checksums(tmp_path):
     for python in ("cp310", "cp311", "cp312", "cp313", "cp314"):
         for platform in PLATFORMS:

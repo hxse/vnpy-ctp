@@ -1,0 +1,17 @@
+{
+  "api_version": "6.7.13",
+  "builds": {
+    "linux_x86_64": {
+      "api_version": "v6.7.13_20260225 14:16:30.12079",
+      "sha256": "8f919d0f75f407b0d7960358acee5f55864744be589f16cb545a91ab8cb80403"
+    },
+    "windows_x86_64": {
+      "api_version": "v6.7.13_20260225 14:16:30.12079",
+      "sha256": "abcff74f93a5a017179180a7c4353d42283f633ffbc8947023ff625533afdebe"
+    },
+    "macos_universal": {
+      "api_version": "v6.7.13_MacOS_20260529 15:38:00",
+      "sha256": "b0e3c684afbfcd24fe0b476363aa9bd35c4d85012c3f9e98e2f9ca9f60afe9d0"
+    }
+  }
+}

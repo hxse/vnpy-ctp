@@ -19,9 +19,14 @@ check:
 
 # 本机 wheel 用于验证；公开的跨平台 wheel 由 Actions 构建。
 build:
-    uv run --no-sync python -m build --wheel --no-isolation --outdir .wheelhouse
+    uv run --no-sync python -m scripts.build_wheel
 
 # 明确指定已生成的 wheel，验证其真实原生扩展。
 [positional-arguments]
 test-native wheel:
     uv run --no-sync python -m scripts.test_wheel "$1"
+
+# 独立完整评测变体；显式准备隔离框架依赖，不影响精简生产环境。
+[positional-arguments]
+test-assessment-native wheel:
+    uv run --no-project --no-config --isolated --python=3.13 --with "$1" --with vnpy==4.4.0 python tests/native/check_assessment.py

@@ -2,13 +2,13 @@
 
 ## 来源与边界
 
-原生绑定从 ccxt-proxy2 的 6.7.11.4+ccxtproxy.2 补丁包复制，源包 SHA256 为 `385d1187e5c5c1d93ae799332d71f929e6bc399b4c4fb192a6ff3ace610b4588`。原始上游来源见 `vendor/origin.json`，复制时的文件校验值见 `vendor/migration.sha256`。
+原生绑定从 ccxt-proxy2 的 6.7.11.4+ccxtproxy.2 补丁包复制，源包 SHA256 为 `385d1187e5c5c1d93ae799332d71f929e6bc399b4c4fb192a6ff3ace610b4588`。当前厂商 API 升级为 6.7.13；原始上游及各平台新 SDK 来源见 `vendor/origin.json`，当前厂商输入校验值见 `vendor/sdk.sha256`。`vendor/migration.sha256` 只保留迁移历史，不能用作当前 SDK 校验。
 
-`native/` 的 CTP 头文件和生成式 C++ 绑定属于可识别来源的第三方代码，不按手写文件的行数上限机械拆分。后续平台适配记录在 `patches/portable-native.patch`。仓库中的原生 CTP 库保持上游字节并校验；wheel 依赖修复工具可调整加载路径、依赖名称和平台签名，最终产物另行计算 SHA256，不修改 SDK 算法。
+`native/` 的 CTP 头文件和生成式 C++ 绑定，以及 `assessment/` 的完整网关/常量，属于上述可识别来源的第三方代码，不按手写文件的行数上限机械拆分。历史平台适配见 `patches/portable-native.patch`，当前实现以源码为准。仓库中的原生 CTP 库保持上游字节并校验；wheel 依赖修复工具可调整加载路径、依赖名称和平台签名，最终产物另行计算 SHA256，不修改 SDK 算法。
 
-本仓库只提供 `vnpy_ctp.TdApi` 和 `vnpy_ctp.api.TdApi`。打包路径仍为 `vnpy_ctp/api/vnctptd.<ABI>.<so|pyd>`。没有完整网关、行情扩展、vnpy 框架或 GUI 依赖。
+默认发布 wheel 只提供 `vnpy_ctp.TdApi` 和 `vnpy_ctp.api.TdApi`。打包路径仍为 `vnpy_ctp/api/vnctptd.<ABI>.<so|pyd>`。没有完整网关、行情扩展、vnpy 框架或 GUI 依赖。
 
-Linux/Windows 沿用原来的交易调用和回调实现。补丁包括：exit 释放 GIL 后等待原生线程；终止标志原子化；回调 payload 由 shared_ptr 持有；终止时清空队列并拒绝迟到入队；在持有 GIL 时使用 Python GB18030 解码器。
+各平台共用交易调用和回调实现。补丁包括：exit/release 释放 GIL 后等待原生线程并允许重复关闭；Create 后未 Init 及析构也安全释放；终止标志原子化；回调 payload 由 shared_ptr 持有；终止时清空队列并拒绝迟到入队；在持有 GIL 时使用 Python GB18030 解码器。GetApiVersion 为不创建 API 的静态方法。
 
 macOS 使用同一 GB18030 路径，退出 iconv 全局状态。Windows 用 SDKDDKVer.h 替代上游缺失的 targetver.h，并显式使用 UTF-8 编译。
 
@@ -22,21 +22,14 @@ macOS 在 delocate 完成后，对 wheel 内每个 Mach-O 做本机 ad-hoc 签�
 
 构建必须按真实目标架构选择原生库；不改标签冒充其他平台，不自动模拟。安装依赖为空，加载入口不能间接导入 vnpy 或 Qt。
 
-## macOS 能力差异
+## 平台构建身份与人工评测
 
-macOS 绑定使用配套 macOS 头文件，不能用新版 Linux 头文件套用旧 Framework 的虚函数布局。
+`vendor/sdk.json` 记录 API 6.7.13 与各平台完整构建串/原始库摘要；发布清单携带同一数据。Linux/Windows 的完整串为 `v6.7.13_20260225 14:16:30.12079`，macOS 为 `v6.7.13_MacOS_20260529 15:38:00`。它们的 API 版本相同，不能要求跨平台完整构建串相同。
 
-当前缺少的请求/配置接口为：
+macOS 使用配套 6.7.13 头文件及 universal Framework。旧版缺少的接口和字段已经由新版 SDK 提供，不再屏蔽；生产模式 true/false 均传递原生工厂。能力清单仍由 `native/capabilities.json` 提供。
 
-- RegisterWechatUserSystemInfo、SubmitWechatUserSystemInfo。
-- ReqQryUserSession、ReqQryInvestorInfoCommRec、ReqQryCombLeg。
-- ReqOffsetSetting、ReqCancelOffsetSetting、ReqQryOffsetSetting。
-
-对应的不可用绑定和回调不注册，调用方不能依赖其存在。完整列表在 `native/capabilities.json`，发布清单携带同一数据。
-
-Mac 的 RspUserLogin 没有 LoginDRIdentityID、UserDRIdentityID、LastLoginTime、ReserveInfo；InvestorPosition 和 TradingAccount 没有 OptionValue。响应只转换实际存在的字段，不填造值。
-
-Mac 原生 CreateFtdcTraderApi 只有路径参数。Python 保持 `createFtdcTraderApi(path, True)` 两个显式参数的写法，但 false 明确抛 ValueError，不默默忽略不支持的模式开关。
+人工评测按同一源码提交用 `python -m scripts.release.version <commit> --stamp --assessment`，再以 `uv build --wheel --config-setting=setup-args=-Dfull_gateway=true --config-setting=compile-args=-j1` 构建。版本末尾增加 `.assessment`，和生产精简包分开缓存、安装；默认发布矩阵不接受该变体。
+该变体共用同一交易扩展，额外编译配套 6.7.13 行情库及上游完整 CtpGateway，供隔离 GUI 环境使用；不改变默认生产包。行情回调同样复用 shared_ptr 队列、GB18030 解码和安全退出。
 
 ## 离线验证
 

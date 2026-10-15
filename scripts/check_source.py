@@ -8,10 +8,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def check(root: Path = ROOT) -> None:
-    # 二进制保持迁移基线原样；C++ 的可审阅平台适配由源码和补丁记录维护。
-    for line in (root / "vendor/migration.sha256").read_text(encoding="utf-8").splitlines():
+    # 厂商输入保持 sdk.sha256 所列原始字节；wheel 修复后的摘要另行计算。
+    for line in (root / "vendor/sdk.sha256").read_text(encoding="utf-8").splitlines():
         expected, name = line.split("  ", 1)
-        if name.startswith("vendor/ctp/"):
+        if name.startswith(("vendor/ctp/", "vendor/assessment/")):
             actual = hashlib.sha256((root / name).read_bytes()).hexdigest()
             if actual != expected:
                 raise ValueError(f"原生库校验失败：{name}")
@@ -24,7 +24,14 @@ def check(root: Path = ROOT) -> None:
     assert "discarded.swap(queue_)" in header and "PyUnicode_Decode" in header
     assert "iconv_open" not in header
     limits = json.loads((root / "native/capabilities.json").read_text(encoding="utf-8"))
-    assert len(limits["macos"]["unavailable_requests"]) == 8
+    assert limits["macos"]["unavailable_requests"] == []
+    assert limits["macos"]["production_mode_switch"] is True
+    sdk = json.loads((root / "vendor/sdk.json").read_text(encoding="utf-8"))
+    for build in sdk["builds"].values():
+        assert build["api_version"].startswith("v" + sdk["api_version"] + "_")
+        assert any(line.startswith(build["sha256"] + "  ") for line in
+                   (root / "vendor/sdk.sha256").read_text().splitlines())
+    assert "__APPLE__" not in cpp and "__APPLE__" not in td_header
     print("native library checksums and required patches verified")
 
 
