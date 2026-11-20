@@ -55,8 +55,15 @@ def inspect_wheel(path: Path, version: str) -> tuple[str, str]:
         inner_tags = set().union(*(parse_tag(item) for item in wheel.get_all("Tag", [])))
         if inner_tags != tags or wheel["Root-Is-Purelib"] != "false":
             raise ValueError(f"wheel 标签或原生类型不一致：{path.name}")
-        if any("vnctpmd" in item or "thostmduserapi" in item or "/gateway/" in item for item in names):
-            raise ValueError("wheel 混入了行情扩展或完整网关")
+        if any("/gateway/" in item for item in names):
+            raise ValueError("wheel 混入了完整网关")
+        market_extensions = [item for item in names if item.startswith("vnpy_ctp/api/vnctpmd.") and item.endswith(".so")]
+        market_libraries = [item for item in names if "thostmduserapi" in item]
+        if cell[1] == "linux-x86_64":
+            if len(market_extensions) != 1 or "vnpy_ctp/api/libthostmduserapi_se.so" not in market_libraries:
+                raise ValueError("Linux wheel 缺少行情扩展或厂商行情库")
+        elif market_extensions or market_libraries or any("vnctpmd" in item for item in names):
+            raise ValueError("该 wheel 平台没有生产行情绑定")
         extensions = [name for name in names if name.startswith("vnpy_ctp/api/vnctptd.")
                       and name.endswith((".so", ".pyd"))]
         if len(extensions) != 1:

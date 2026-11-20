@@ -25,6 +25,9 @@ def wheel(directory: Path, python="cp313", platform="manylinux_2_28_x86_64", *, 
         archive.writestr(f"vnpy_ctp-{VERSION}.dist-info/WHEEL", wheel_info)
         archive.writestr(f"vnpy_ctp/api/vnctptd.{python}." + ("pyd" if platform.startswith("win") else "so"), b"fixture")
         archive.writestr("vnpy_ctp/api/libthosttraderapi_se.so", b"fixture")
+        if platform.startswith("manylinux"):
+            archive.writestr(f"vnpy_ctp/api/vnctpmd.{python}.so", b"fixture")
+            archive.writestr("vnpy_ctp/api/libthostmduserapi_se.so", b"fixture")
     return path
 
 

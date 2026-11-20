@@ -20,7 +20,7 @@ prepare 先检查原生库来源、必须保留的补丁、单元测试和 lint�
 
 只有所有矩阵目标成功，release 作业才取得 contents:write 权限。构建作业只读源码，不使用交易账户或消费项目配置。
 
-发布前检查文件名、内部 METADATA/WHEEL、Python ABI、平台、唯一交易扩展、原生库存在性和空依赖列表。要求恰好覆盖 20 个不同单元；拒绝重复、缺失、额外平台、版本错配和夹带行情/网关模块。
+发布前检查文件名、内部 METADATA/WHEEL、Python ABI、平台、唯一交易扩展、原生库存在性和空依赖列表。要求恰好覆盖 20 个不同单元。Linux 单元另校验轻量行情扩展和配套厂商库。拒绝重复、缺失、平台能力或版本错配及夹带完整网关。
 
 正式附件为 20 个 wheel、SHA256SUMS、manifest.json。manifest 包含版本、commit、绑定上游版本、厂商 API 版本/各平台完整构建串与原库摘要、平台能力差异和各 wheel 的 URL、大小、SHA256。厂商元数据来自 vendor/sdk.json，不能只靠 wheel 发行版本推断 API。
 

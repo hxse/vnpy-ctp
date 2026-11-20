@@ -24,8 +24,10 @@ def check_installed_package() -> None:
     distribution = importlib.metadata.distribution("vnpy_ctp")
     assert not distribution.requires, distribution.requires
     files = [str(path) for path in distribution.files or ()]
-    assert not any("vnctpmd" in path or "thostmduserapi" in path or "/gateway/" in path
-                   for path in files)
+    assert not any("/gateway/" in path for path in files)
+    assert any("vnctpmd" in path for path in files) == (sys.platform == "linux")
+    assert any("thostmduserapi" in path for path in files) == (sys.platform == "linux")
+    assert "vnpy_ctp.api.vnctpmd" not in sys.modules
     assert not any(name == "vnpy" or name.startswith("vnpy.") for name in sys.modules)
     sdk = json.loads((ROOT / "vendor/sdk.json").read_text(encoding="utf-8"))
     platform = {"linux": "linux_x86_64", "win32": "windows_x86_64",
@@ -35,6 +37,23 @@ def check_installed_package() -> None:
     for name in limits["macos"]["unavailable_requests"]:
         python_name = name[0].lower() + name[1:]
         assert hasattr(TdApi, python_name) is (sys.platform != "darwin"), python_name
+    if sys.platform == "linux":
+        from vnpy_ctp import MdApi
+
+        assert MdApi.getApiVersion() == TdApi.getApiVersion()
+        with tempfile.TemporaryDirectory() as path:
+            market = MdApi()
+            market.createFtdcMdApi(path + "/", True)
+            assert market.readEvents(0) == []
+            for invalid in ([], ["rb2701", "rb2701"], ["x" * 100]):
+                try:
+                    market.subscribeMarketData(invalid)
+                except ValueError:
+                    pass
+                else:
+                    raise AssertionError("invalid market subscription")
+            market.exit()
+            market.exit()
     print("native API", TdApi.getApiVersion(), "wheel", distribution.version, flush=True)
 
 

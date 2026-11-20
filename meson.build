@@ -1,6 +1,6 @@
 project(
   'vnpy_ctp', 'cpp',
-  version: '6.7.13.0+ccxtproxy.4',
+  version: '6.7.13.0+ccxtproxy.5',
   license: 'MIT',
   meson_version: '>=1.7.0',
   default_options: ['buildtype=release', 'cpp_std=c++17', 'b_vscrt=mt'],
@@ -61,7 +61,7 @@ py.extension_module(
   subdir: 'vnpy_ctp/api',
 )
 if get_option('full_gateway')
-  # 只供独立人工评测环境；生产默认 wheel 仍不包含网关或行情模块。
+  # 完整网关与评测版行情封装只供独立人工评测。
   if not meson.project_version().endswith('.assessment')
     error('Full gateway builds require the separate .assessment version')
   endif
@@ -89,6 +89,20 @@ if get_option('full_gateway')
 else
   if meson.project_version().endswith('.assessment')
     error('Assessment versions must include the full gateway')
+  endif
+  if system == 'linux'
+    # 同一锁定厂商库用于 Linux 生产快照和独立评测。
+    md_dir = root / 'vendor/assessment/linux-x86_64'
+    md = cpp.find_library('thostmduserapi_se', dirs: [md_dir], required: true)
+    install_data(md_dir / 'libthostmduserapi_se.so', install_dir: py.get_install_dir() / 'vnpy_ctp/api')
+    py.extension_module(
+      'vnctpmd', 'native/vnctpmd.cpp',
+      include_directories: include_directories(headers),
+      cpp_args: [pybind_flag + pybind_include],
+      dependencies: [py.dependency(), md, dependency('threads')],
+      install: true, install_rpath: rpath,
+      subdir: 'vnpy_ctp/api',
+    )
   endif
   py.install_sources('src/vnpy_ctp/__init__.py', subdir: 'vnpy_ctp')
   py.install_sources('src/vnpy_ctp/api/__init__.py', subdir: 'vnpy_ctp/api')
