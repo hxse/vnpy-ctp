@@ -30,3 +30,7 @@ test-native wheel:
 [positional-arguments]
 test-assessment-native wheel:
     uv run --no-project --no-config --isolated --python=3.13 --with "$1" --with vnpy==4.4.0 python tests/native/check_assessment.py
+
+# 在固定编译镜像中构建并离线验证 Go C ABI 归档。
+build-go-native:
+    bash scripts/go_native_container.sh .release/go "$(git rev-parse HEAD)" hxse/vnpy-ctp

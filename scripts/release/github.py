@@ -37,12 +37,30 @@ class Github:
                 body = response.read()
                 return json.loads(body) if body else None
         except HTTPError as error:
-            if error.code == 404 and method == "GET" and path.startswith("releases/tags/"):
+            if error.code == 404 and method == "GET" and path.startswith(("releases/tags/", "git/ref/tags/")):
                 return None
             raise RuntimeError(f"GitHub {method} {path.split('?')[0]} 返回 HTTP {error.code}") from None
 
     def release(self, tag: str):
         return self.request("GET", "releases/tags/" + quote(tag, safe=""))
+
+    def tag_reference(self, tag: str):
+        return self.request("GET", "git/ref/tags/" + quote(tag, safe=""))
+
+    def draft_release(self, tag: str):
+        # 按标签查询只保证返回已发布版本；发布作业使用有写权的令牌查找草稿。
+        page = 1
+        match = None
+        while True:
+            values = self.request("GET", f"releases?per_page=100&page={page}")
+            for release in values:
+                if release["tag_name"] == tag and release["draft"]:
+                    if match is not None:
+                        raise ValueError("同一 Git 标签存在多个 Release 草稿")
+                    match = release
+            if len(values) < 100:
+                return match
+            page += 1
 
     def assets(self, release_id: int):
         return self.request("GET", f"releases/{release_id}/assets?per_page=100")
@@ -53,10 +71,10 @@ class Github:
         with urlopen(Request(url, headers={"User-Agent": "vnpy-ctp-wheel-release"}), timeout=30) as response:
             return response.read()
 
-    def create(self, tag: str, commit: str):
+    def create(self, tag: str, commit: str, *, body: str | None = None):
         return self.request("POST", "releases", payload={
             "tag_name": tag, "target_commitish": commit, "name": tag,
-            "body": "当前提交的跨平台交易 API wheel。兼容平台、固定下载链接和 SHA256 见 manifest.json。",
+            "body": body or "当前提交的跨平台交易 API wheel。兼容平台、固定下载链接和 SHA256 见 manifest.json。",
             "draft": True, "prerelease": False,
         })
 
